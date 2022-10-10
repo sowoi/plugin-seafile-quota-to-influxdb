@@ -27,5 +27,8 @@ This plugin creates metrics from Seafile libraries quotas and stores them in Inf
                         InfluxDB Token (mandatory)
 
 
+# Installation
+See https://okxo.de/monitor-seafile-libraries-with-grafana/
+
 # License
 Licensed under the terms of Apache License Version 2. See LICENSE file.
