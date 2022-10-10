@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/root/git/project/plugin-seafile-quota-to-influxdb2"
+VIRTUAL_ENV="/root/git/project/plugin-seafile-quota-to-influxdb"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
@@ -54,7 +54,7 @@ fi
 
 if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     _OLD_VIRTUAL_PS1="${PS1:-}"
-    PS1="(plugin-seafile-quota-to-influxdb2) ${PS1:-}"
+    PS1="(plugin-seafile-quota-to-influxdb) ${PS1:-}"
     export PS1
 fi
 
