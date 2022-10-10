@@ -19,37 +19,7 @@ LOGGER = logging.getLogger('plugin_seafile_quota_to_influxdb')
 date_utils.date_helper = DateHelper(timezone=tzlocal())
 
 
-def used_quota(seafileAddress, token):
-  tokenHeader = "Token "  + str(token)
-  headers = {
-            'Authorization': tokenHeader,
-            'Accept': 'application/json; indent=4',
-    }
-
-  authURLUser = seafileAddress + "/api/v2.1/admin/users/?page=1&per_page=100"
-
-
-
-  responseUser = requests.get(authURLUser, headers=headers)
-
-  x = responseUser.text
-
-  y = json.loads(x)
-
-
-  #current usage                                                                                                                                                                                                                                            
-  usage = (y["data"][0]["quota_usage"])
-  #total quota                                                                                                                                                                                                                                              
-  total = (y["data"][0]["quota_total"])
-  #space left                                                                                                                                                                                                                                               
-  differ = total - usage
-  percent = (round(float(100-(int(usage)/int(total))*100),2))
-
-
-  return differ, percent
-
-
-def library_check(seafileAddress, token, influxdbHost, influxdbPort, influxdbToken, measuringTime):
+def library_check(seafileAddress, token, influxdbHost, influxdbPort, influxdbToken, measuringTime, debug):
   tokenHeader = "Token "  + str(token)
   headers = {
                   'Authorization': tokenHeader,
@@ -63,16 +33,14 @@ def library_check(seafileAddress, token, influxdbHost, influxdbPort, influxdbTok
    u = responseLibrary.text
    v = json.loads(u)
 
+   # Search Seafile Repos and extract library name and size
    libraryConsumption = ""
    for library in v["repos"]:
       label = str(library["name"])
       label = str("".join(label.split())).replace("ä","ae").replace("ö","oe").replace("ü","ue").replace("ß","ss").replace("Ü","UE").replace(".","").replace("Ö","OE").replace("Ä","ae")
-      if str(library["size_formatted"]) !=  "0\xa0Bytes":
-       used = str(library["size_formatted"])
-       used = str("".join(used.split())).replace(",",".")
-       libraryConsumption = " " + str(used)
-      print(label, libraryConsumption)
-      sendData2InfluxDB(label, libraryConsumption, influxdbHost, influxdbPort, influxdbToken, measuringTime)
+      libraryConsumption =int(str(library["size"]).replace(" ",""))
+      # parse library name and size to influxdb
+      sendData2InfluxDB(label, libraryConsumption, influxdbHost, influxdbPort, influxdbToken, measuringTime, debug)
 
   except:
     print("UNKNOWN: no library found. Wrong token or address!")
@@ -80,8 +48,8 @@ def library_check(seafileAddress, token, influxdbHost, influxdbPort, influxdbTok
   return libraryConsumption
 
 
-def sendData2InfluxDB(label, libraryConsumption, influxdbHost, influxdbPort, influxdbToken, measuringTime):
-  influxclient = InfluxDBClient(url=influxdbHost+":"+influxdbPort, token=influxdbToken, org="seafileMonitor", debug=False)
+def sendData2InfluxDB(label, libraryConsumption, influxdbHost, influxdbPort, influxdbToken, measuringTime, debug):
+  influxclient = InfluxDBClient(url=influxdbHost+":"+influxdbPort, token=influxdbToken, org="seafileMonitor", debug=debug)
   version = influxclient
   #initiate write API
   write_api = influxclient.write_api(write_options=ASYNCHRONOUS)
@@ -91,7 +59,8 @@ def sendData2InfluxDB(label, libraryConsumption, influxdbHost, influxdbPort, inf
   # set measurement to "quota"
   # set key to "library"
   # set value to "libraryConsumption"
-  write_api.write("seafileData", "seafileMonitor", ["quota,library="+label+' value="'+libraryConsumption+'"'])
+
+  write_api.write("seafileData", "seafileMonitor", ["quota4,library="+label+' value='+str(libraryConsumption)])
 
 
   
@@ -157,6 +126,5 @@ if __name__ == "__main__":
           logging.basicConfig()
           LOGGER.setLevel(logging.INFO)
        
-        used_quota(seafileAddress, seafileToken)
-        library_check(seafileAddress, seafileToken, influxdbHost, influxdbPort, influxdbToken, measuringTime)
-        #sendData2InfluxDB(seafileAddress, influxdbHost, influxdbPort, influxdbToken)
+        library_check(seafileAddress, seafileToken, influxdbHost, influxdbPort, influxdbToken, measuringTime, options.debug)
+
