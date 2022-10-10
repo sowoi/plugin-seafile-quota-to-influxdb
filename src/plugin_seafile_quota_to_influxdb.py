@@ -1,5 +1,4 @@
 #! /usr/bin/python3
-# Check nextcloud instance for known vulnerabilities on scan.nextcloud.com
 # Developer: Massoud Ahmed
 
 
@@ -8,13 +7,16 @@ import json
 import sys
 from optparse import OptionParser, OptionGroup
 import logging
-import re
-#from influxdb import InfluxDBClient
 import time
 from influxdb_client import InfluxDBClient
+from influxdb_client.client.write_api import ASYNCHRONOUS
+from dateutil.tz import tzlocal
+from influxdb_client.client.util import date_utils
+from influxdb_client.client.util.date_utils import DateHelper
 
-LOGGER = logging.getLogger('check_nextcloud')
 
+LOGGER = logging.getLogger('plugin_seafile_quota_to_influxdb')
+date_utils.date_helper = DateHelper(timezone=tzlocal())
 
 
 def used_quota(seafileAddress, token):
@@ -63,7 +65,6 @@ def library_check(seafileAddress, token, influxdbHost, influxdbPort, influxdbTok
 
    libraryConsumption = ""
    for library in v["repos"]:
-      #print(library)
       label = str(library["name"])
       label = str("".join(label.split())).replace("ä","ae").replace("ö","oe").replace("ü","ue").replace("ß","ss").replace("Ü","UE").replace(".","").replace("Ö","OE").replace("Ä","ae")
       if str(library["size_formatted"]) !=  "0\xa0Bytes":
@@ -76,44 +77,27 @@ def library_check(seafileAddress, token, influxdbHost, influxdbPort, influxdbTok
   except:
     print("UNKNOWN: no library found. Wrong token or address!")
     raise
-  #print(libraryConsumption)
   return libraryConsumption
 
 
 def sendData2InfluxDB(label, libraryConsumption, influxdbHost, influxdbPort, influxdbToken, measuringTime):
-  influxclient = InfluxDBClient(url=influxdbHost+":"+influxdbPort, token=influxdbToken, org="seafile")
-  version = influxclient.ping()
-  print("Successfully connected to InfluxDB: " + str(version))
-
-  # create Json Body
-  json_body = {
-        "tags": {
-            "library": label
-        },
-        "points": [{
-            "measurement": "Quota",
-            "fields": {
-                "value": libraryConsumption
-            },
-            "time": str(measuringTime)
-        }]
-    }
-  print(json_body)
-
+  influxclient = InfluxDBClient(url=influxdbHost+":"+influxdbPort, token=influxdbToken, org="seafileMonitor", debug=False)
+  version = influxclient
   #initiate write API
-  write_api = influxclient.write_api()
-  # [{"measurement": "h2o_feet", "tags": {"location": "coyote_creek"}, "fields": {"water_level": 1}, "time": 1}])
-  write_api.write("seafile", "seafileMonitor", ["library="+label+" value="+libraryConsumption])
-  #influxclient.write_points(json_body, time_precision=None, database="seafile", retention_policy=None, protocol=u'json')
+  write_api = influxclient.write_api(write_options=ASYNCHRONOUS)
 
-  #influxclient.write_points(json_body)
-
+  # Write library quota data to bucket "seafileData"
+  # Organization "seafileMonitor"
+  # set measurement to "quota"
+  # set key to "library"
+  # set value to "libraryConsumption"
+  write_api.write("seafileData", "seafileMonitor", ["quota,library="+label+' value="'+libraryConsumption+'"'])
 
 
   
 if __name__ == "__main__":
 
-        desc='''%prog checks your nextcloud server for vulnerabilities '''
+        desc='''%prog fetches your seafile library quotas and writes them to InfluxDB'''
         parser = OptionParser(description=desc)
         gen_opts = OptionGroup(parser, "Generic options")
         host_opts = OptionGroup(parser, "Host options")
