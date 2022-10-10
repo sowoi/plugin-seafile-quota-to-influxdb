@@ -63,7 +63,7 @@ def sendData2InfluxDB(label, libraryConsumption, influxdbHost, influxdbPort, inf
   # set key to "library"
   # set value to "libraryConsumption"
 
-  write_api.write("seafileData", "seafileMonitor", ["quota4,library="+label+' value='+str(libraryConsumption)])
+  write_api.write("seafileData", "seafileMonitor", ["quota,library="+label+' value='+str(libraryConsumption)])
 
 
 
