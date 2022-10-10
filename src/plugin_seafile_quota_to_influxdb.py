@@ -93,7 +93,7 @@ def getUserQuota(seafileAddress,seafileToken,influxdbHost, influxdbPort, influxd
   #calculate space left        
   differ = total - usage
 
-  sendData2InfluxDB("Total", differ, influxdbHost, influxdbPort, influxdbToken, debug)
+  sendData2InfluxDB("QuotaLeft", differ, influxdbHost, influxdbPort, influxdbToken, debug)
   
 
 
