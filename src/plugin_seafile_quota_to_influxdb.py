@@ -42,6 +42,8 @@ def library_check(seafileAddress, seafileToken, influxdbHost, influxdbPort, infl
       libraryConsumption =int(str(library["size"]).replace(" ",""))
       # parse library name and size to influxdb
       sendData2InfluxDB(label, libraryConsumption, influxdbHost, influxdbPort, influxdbToken, debug)
+      if debug:
+        print("Library: " + str(label) + " Used: " +str(library["size_formatted"]))
 
   except:
     print("UNKNOWN: no library found. Wrong token or address!")
