@@ -6,8 +6,12 @@ This standalone plugin creates metrics from Seafile libraries quotas and stores 
 - Seafile API token
 - InfluxDB token
 
+# Poetry
+`poetry install`
+
 
 # Options
+```
  -h, --help            show this help message and exit
 
   Generic options:
@@ -25,7 +29,7 @@ This standalone plugin creates metrics from Seafile libraries quotas and stores 
                         InfluxDB Host (default: 8086)
     -t PORT, --token=PORT
                         InfluxDB Token (mandatory)
-
+```
 
 # Installation
 See https://okxo.de/monitor-seafile-libraries-with-grafana/
